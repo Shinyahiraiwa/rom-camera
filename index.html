@@ -142,6 +142,23 @@ details .btn { width: 100%; margin-top: 6px; }
   #angle { font-size: 52px; }
 }
 
+/* 測定画面のガイド */
+#miniGuide { position: absolute; top: calc(56px + env(safe-area-inset-top)); left: 8px; width: 250px; max-height: calc(100% - 70px); overflow: auto;
+  background: rgba(255,255,255,.92); color: #0f172a; border-radius: 14px; padding: 10px; font-size: 13px; line-height: 1.5;
+  box-shadow: 0 4px 18px rgba(0,0,0,.35); cursor: pointer; --ink: #0f172a; --muted: #475569; --base: #2563eb; --move: #dc2626; }
+#miniGuide[hidden] { display: none; }
+#miniGuide .fig { background: #f1f5f9; margin: 6px 0; }
+.mg-head { display: flex; justify-content: space-between; gap: 6px; font-size: 14px; }
+.mg-head span { color: #475569; white-space: nowrap; }
+.mg-ax { margin-top: 3px; } .mg-ax b.b { color: #2563eb; } .mg-ax b.m { color: #dc2626; }
+.mg-pos { margin-top: 6px; color: #475569; font-size: 12px; }
+.guide { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
+.guide h3 { font-size: 15px; margin: 0 0 8px; color: var(--muted); }
+.guide .cards { grid-template-columns: 1fr; gap: 10px; }
+.guide .card { padding: 10px 12px; }
+.guide .warn { margin: 0 0 10px; font-size: 14px; }
+@media (max-width: 820px), (orientation: portrait) { #miniGuide { width: 210px; } }
+
 /* モーダル */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: grid; place-items: center; z-index: 20; padding: 16px; }
 .modal[hidden] { display: none; }
@@ -191,8 +208,10 @@ details .btn { width: 100%; margin-top: 6px; }
     <video id="video" playsinline muted autoplay></video>
     <div class="mbar">
       <button class="pill" id="bBackSetup">← 戻る</button>
+      <button class="pill" id="bMini">ガイドを隠す</button>
       <span class="level" id="level"></span>
     </div>
+    <div id="miniGuide" hidden></div>
     <canvas id="loupe" hidden></canvas>
     <div id="countdown" hidden></div>
     <div id="status" class="pill" hidden></div>
@@ -207,6 +226,7 @@ details .btn { width: 100%; margin-top: 6px; }
       <div id="angleSub"></div>
     </div>
     <div id="controls"></div>
+    <div id="mGuide" class="guide"></div>
   </aside>
 </section>
 

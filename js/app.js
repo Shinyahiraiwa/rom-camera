@@ -59,7 +59,6 @@ function renderSetup() {
   const m = S.motion;
   const acc = ACC[m.acc];
   const sideLabel = m.dirLR ? ['右', '左'] : ['右', '左'];
-  const view = VIEWS[m.view];
   $('#setupBody').innerHTML = `
     <div class="setup-head">
       <div>
@@ -86,7 +85,20 @@ function renderSetup() {
           <button data-v="user" class="${S.facing === 'user' ? 'on' : ''}">前面</button>
         </div></div>
     </div>
-    <div class="cards">
+    <div class="cards">${guideCards(m)}</div>`;
+  const bindSeg = (id, key, conv = v => v) => {
+    const el = $(id); if (!el) return;
+    el.onclick = e => { const b = e.target.closest('button'); if (!b) return; S[key] = conv(b.dataset.v); renderSetup(); };
+  };
+  bindSeg('#sideSeg', 'side');
+  bindSeg('#fingerSeg', 'finger', Number);
+  bindSeg('#camSeg', 'facing');
+}
+
+// 撮影方向・基本軸/移動軸・置く点（準備画面と測定画面の両方で使う）
+function guideCards(m) {
+  const view = VIEWS[m.view];
+  return `
       <div class="card">
         <h4>① 撮影方向：${view.name}</h4>
         ${cameraFigure(m.view, S.side, m)}
@@ -108,15 +120,7 @@ function renderSetup() {
         <p class="sub">${m.models.length ? 'AIが点を自動で置きます。ずれていたら指でドラッグして指標点に合わせてください。' : 'この運動はAIで推定できないため、点を指で置きます。'}</p>
         ${m.baseline ? `<p class="sub"><b>開始肢位→最終域の2回撮影：</b>まず開始肢位で止めて「開始肢位を0°にする」を押し、次に最終域で止めます。</p>` : ''}
         ${m.note ? `<p class="sub">📝 ${m.note}</p>` : ''}
-      </div>
-    </div>`;
-  const bindSeg = (id, key, conv = v => v) => {
-    const el = $(id); if (!el) return;
-    el.onclick = e => { const b = e.target.closest('button'); if (!b) return; S[key] = conv(b.dataset.v); renderSetup(); };
-  };
-  bindSeg('#sideSeg', 'side');
-  bindSeg('#fingerSeg', 'finger', Number);
-  bindSeg('#camSeg', 'facing');
+      </div>`;
 }
 
 function roleOf(m, id) {
@@ -363,6 +367,7 @@ async function beginMeasure() {
   show('measure');
   $('#mTitle').textContent = `${S.motion.joint} ${S.motion.name}`;
   $('#mSide').textContent = S.motion.dirLR ? `${S.side === 'R' ? '右' : '左'}方向` : `${S.side === 'R' ? '右' : '左'}側`;
+  renderGuide();
   S.pts = {}; S.low = {}; S.offset = null;
   enableMotionSensor();
   if (S.motion.models.length) {
@@ -586,6 +591,29 @@ function drawLevel() {
   const t = g.tilt;
   el.textContent = `傾き ${t > 0 ? '+' : ''}${t.toFixed(1)}°${usesGravity ? '（自動補正）' : ''}`;
   el.className = 'level' + (Math.abs(t) > 5 ? ' warn' : ' ok');
+}
+
+// ───────── 測定画面のガイド ─────────
+function renderGuide() {
+  const m = S.motion, view = VIEWS[m.view];
+  $('#mGuide').innerHTML = `
+    <h3>測定の準備（確認用）</h3>
+    ${m.acc === 'C' ? `<div class="warn">⚠ 誤差が大きい運動です。参考値として扱い、ゴニオメーターと比べてください。</div>` : ''}
+    <div class="cards">${guideCards(m)}</div>`;
+  $('#miniGuide').innerHTML = `
+    <div class="mg-head"><b>${view.name}から撮影</b><span>参考 ${m.ref === '—' ? '記載なし' : m.ref + (m.ref.match(/\d$/) ? '°' : '')}</span></div>
+    ${cameraFigure(m.view, S.side, m)}
+    <div class="mg-ax"><b class="b">基本軸</b> ${m.base}</div>
+    <div class="mg-ax"><b class="m">移動軸</b> ${m.move}</div>
+    ${m.pos ? `<div class="mg-pos">${m.pos}</div>` : ''}`;
+  let open = true;
+  try { open = localStorage.getItem('rom.mini') !== '0'; } catch {}
+  setMini(open);
+}
+function setMini(open) {
+  $('#miniGuide').hidden = !open;
+  $('#bMini').textContent = open ? 'ガイドを隠す' : '📋 ガイド';
+  try { localStorage.setItem('rom.mini', open ? '1' : '0'); } catch {}
 }
 
 // ───────── パネル ─────────
@@ -824,6 +852,8 @@ $('#bBackHome').onclick = () => { show('home'); };
 $('#bBackSetup').onclick = () => { stopCamera(); S.mode = 'idle'; if (S.timer) { clearInterval(S.timer); S.timer = null; $('#countdown').hidden = true; } show('setup'); renderSetup(); };
 $('#bQR').onclick = () => { renderQR(); openModal('#qrModal'); };
 $('#bHelp').onclick = () => openModal('#helpModal');
+$('#bMini').onclick = () => setMini($('#miniGuide').hidden);
+$('#miniGuide').onclick = () => setMini(false);
 for (const b of document.querySelectorAll('[data-close]')) b.onclick = closeModals;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && S.mode === 'live') stopCamera();
